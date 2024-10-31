@@ -558,6 +558,16 @@ public class DiscordClient(string token)
         return response.EnumerateArray().Select(Message.Parse).LastOrDefault();
     }
 
+    public async IAsyncEnumerable<Message> GetLastMessageAsync(
+        Snowflake channelId,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
+    )
+    {
+        var lastMessage = await TryGetLastMessageAsync(channelId, null, cancellationToken);
+        if (lastMessage is not null)
+            yield return lastMessage;
+    }
+
     public async IAsyncEnumerable<Message> GetMessagesAsync(
         Snowflake channelId,
         Snowflake? after = null,
@@ -571,7 +581,7 @@ public class DiscordClient(string token)
         // This also snapshots the boundaries, which means that messages posted after
         // the export started will not appear in the output.
         var lastMessage = await TryGetLastMessageAsync(channelId, before, cancellationToken);
-        if (lastMessage is null || lastMessage.Timestamp < after?.ToDate())
+        if (lastMessage is null || lastMessage.Timestamp < after?.ToUTCDate())
             yield break;
 
         // Keep track of the first message in range in order to calculate the progress

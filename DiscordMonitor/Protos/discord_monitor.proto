@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+
+option csharp_namespace = "DiscordMonitor.Grpc";
+
+package discordmonitor;
+
+service DiscordMonitorService {
+  // Manages channel monitoring configurations
+  rpc AddConfiguration(AddConfigurationRequest) returns (google.protobuf.Empty);
+  rpc RemoveConfiguration(RemoveConfigurationRequest) returns (google.protobuf.Empty);
+
+  // Streams new messages for all monitored channels
+  rpc SubscribeToMessages(google.protobuf.Empty) returns (stream DiscordMessage);
+
+  // Get current monitoring status
+  rpc GetMonitoringStatus(google.protobuf.Empty) returns (MonitoringStatus);
+}
+
+message AddConfigurationRequest {
+  string token = 1;
+  string channel_id = 2;
+  repeated string followed_user_ids = 3;
+  google.protobuf.Duration polling_interval = 4;
+}
+
+message RemoveConfigurationRequest {
+  string channel_id = 1;
+}
+
+message DiscordMessage {
+  string message_id = 1;
+  string channel_id = 2;
+  string author_id = 3;
+  string author_name = 4;
+  string content = 5;
+  google.protobuf.Timestamp timestamp = 6;
+}
+
+message MonitoringStatus {
+  repeated ChannelStatus channels = 1;
+}
+
+message ChannelStatus {
+  string channel_id = 1;
+  string channel_name = 2;
+  bool is_active = 3;
+  google.protobuf.Timestamp last_check = 4;
+  int32 total_messages_processed = 5;
+}

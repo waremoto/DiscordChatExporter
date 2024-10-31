@@ -12,7 +12,7 @@ using DiscordChatExporter.Core.Utils.Extensions;
 
 namespace DiscordChatExporter.Core.Exporting;
 
-internal class ExportContext(DiscordClient discord, ExportRequest request)
+public class ExportContext(DiscordClient discord, ExportRequest request)
 {
     private readonly Dictionary<Snowflake, Member?> _membersById = new();
     private readonly Dictionary<Snowflake, Channel> _channelsById = new();
