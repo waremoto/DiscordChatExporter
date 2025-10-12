@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using DiscordChatExporter.Cli.Commands.Base;
-using DiscordChatExporter.Cli.Commands.Converters;
-using DiscordChatExporter.Cli.Commands.Shared;
 using DiscordChatExporter.Cli.Utils.Extensions;
 using DiscordChatExporter.Core.Discord.Data;
 using DiscordChatExporter.Core.Discord.Dump;
@@ -26,13 +24,6 @@ public class ExportAllCommand : ExportCommandBase
 
     [CommandOption("include-vc", Description = "Include voice channels.")]
     public bool IncludeVoiceChannels { get; init; } = true;
-
-    [CommandOption(
-        "include-threads",
-        Description = "Which types of threads should be included.",
-        Converter = typeof(ThreadInclusionModeBindingConverter)
-    )]
-    public ThreadInclusionMode ThreadInclusionMode { get; init; } = ThreadInclusionMode.None;
 
     [CommandOption(
         "data-package",
@@ -90,46 +81,6 @@ public class ExportAllCommand : ExportCommandBase
                     );
 
                 await console.Output.WriteLineAsync($"Fetched {fetchedChannelsCount} channel(s).");
-
-                // Threads
-                if (ThreadInclusionMode != ThreadInclusionMode.None)
-                {
-                    await console.Output.WriteLineAsync(
-                        $"Fetching threads for server '{guild.Name}'..."
-                    );
-
-                    var fetchedThreadsCount = 0;
-                    await console
-                        .CreateStatusTicker()
-                        .StartAsync(
-                            "...",
-                            async ctx =>
-                            {
-                                await foreach (
-                                    var thread in Discord.GetGuildThreadsAsync(
-                                        guild.Id,
-                                        ThreadInclusionMode == ThreadInclusionMode.All,
-                                        Before,
-                                        After,
-                                        cancellationToken
-                                    )
-                                )
-                                {
-                                    channels.Add(thread);
-
-                                    ctx.Status(
-                                        Markup.Escape($"Fetched '{thread.GetHierarchicalName()}'.")
-                                    );
-
-                                    fetchedThreadsCount++;
-                                }
-                            }
-                        );
-
-                    await console.Output.WriteLineAsync(
-                        $"Fetched {fetchedThreadsCount} thread(s)."
-                    );
-                }
             }
         }
         // Pull from the data package
@@ -199,10 +150,6 @@ public class ExportAllCommand : ExportCommandBase
             channels.RemoveAll(c => c.IsGuild);
         if (!IncludeVoiceChannels)
             channels.RemoveAll(c => c.IsVoice);
-        if (ThreadInclusionMode == ThreadInclusionMode.None)
-            channels.RemoveAll(c => c.IsThread);
-        if (ThreadInclusionMode != ThreadInclusionMode.All)
-            channels.RemoveAll(c => c is { IsThread: true, IsArchived: true });
 
         await ExportAsync(console, channels);
     }
